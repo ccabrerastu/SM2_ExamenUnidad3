@@ -13,7 +13,10 @@ import {
   Request,
   BadRequestException,
   NotFoundException,
+  UseInterceptors,
+  UploadedFile,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import {
   ApiTags,
   ApiOperation,
@@ -31,6 +34,7 @@ import {
   StartInterviewSessionDto,
   StartInterviewSessionResponseDto,
   SubmitAnswerDto,
+  SubmitAnswerAudioDto,
   SubmitAnswerResponseDto,
   GetSessionScoreResponseDto,
 } from '../../../application/dtos/interview';
@@ -117,6 +121,48 @@ export class InterviewController {
     }
     this.logger.log(`User ${userId} submitting answer for session ${dto.sessionId}, question ${dto.questionId}`);
     return this.interviewService.submitAnswer(userId, dto);
+  }
+
+  @Post('sessions/submit-answer-audio')
+  @SkipCSRF()
+  @UseInterceptors(FileInterceptor('audio'))
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Submit an audio answer for evaluation',
+    description: 'Submits user audio answer (M4A format), evaluates with Google Gemini AI, and returns pronunciation analysis with scores',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Audio answer submitted and evaluated successfully',
+    type: SubmitAnswerResponseDto,
+  })
+  @ApiResponse({ status: 400, description: 'Bad Request - Invalid session, question, or missing audio file' })
+  @ApiResponse({ status: 404, description: 'Not Found - Session or question does not exist' })
+  @ApiResponse({ status: 401, description: 'Unauthorized - Invalid or missing JWT token' })
+  async submitAnswerAudio(
+    @Request() req: AuthenticatedRequest,
+    @Body() dto: SubmitAnswerAudioDto,
+    @UploadedFile() file: Express.Multer.File,
+  ): Promise<SubmitAnswerResponseDto> {
+    const userId = req.user?.userId;
+    if (!userId) {
+      throw new Error('User ID not found in request');
+    }
+
+    if (!file) {
+      throw new BadRequestException('Audio file is required');
+    }
+
+    this.logger.log(`User ${userId} submitting audio answer for session ${dto.sessionId}, question ${dto.questionId}`);
+    this.logger.log(`Audio file: ${file.originalname}, size: ${file.size} bytes, mime: ${file.mimetype}`);
+
+    return this.interviewService.submitAnswerAudio(
+      userId,
+      dto.sessionId,
+      dto.questionId,
+      file.buffer,
+      dto.timeSpentSeconds,
+    );
   }
 
   @Get('sessions/:sessionId/score')

@@ -219,6 +219,110 @@ export class InterviewService {
   }
 
   /**
+   * Submit an audio answer and get evaluation
+   */
+  async submitAnswerAudio(
+    userId: string,
+    sessionId: string,
+    questionId: string,
+    audioBuffer: Buffer,
+    timeSpentSeconds?: number,
+  ): Promise<SubmitAnswerResponseDto> {
+    this.logger.log(`Submitting audio answer for session ${sessionId}, question ${questionId}`);
+
+    // Get session
+    const session = await this.sessionRepository.findByIdSimple(sessionId);
+    if (!session) {
+      throw new NotFoundException(`Session with ID ${sessionId} not found`);
+    }
+
+    // Verify session belongs to user
+    if (session.userId !== userId) {
+      throw new BadRequestException('This session does not belong to you');
+    }
+
+    // Verify session is in progress
+    if (session.status !== InterviewStatus.IN_PROGRESS) {
+      throw new BadRequestException('This session is not in progress');
+    }
+
+    // Get question details
+    const question = await this.questionRepository.findById(questionId);
+    if (!question) {
+      throw new NotFoundException(`Question with ID ${questionId} not found`);
+    }
+
+    // Verify question belongs to session's topic
+    if (question.topicId !== session.topicId) {
+      throw new BadRequestException('This question does not belong to the session topic');
+    }
+
+    // Evaluate audio answer using AI service
+    const evaluation = await this.aiEvaluationService.evaluateAudioAnswer(
+      question,
+      audioBuffer,
+      timeSpentSeconds,
+    );
+
+    // Submit answer to session
+    session.submitAnswer(evaluation);
+
+    // Save updated session
+    const updatedSession = await this.sessionRepository.update(session);
+
+    // Prepare response
+    const evaluationDto: AnswerEvaluationDto = {
+      questionId: evaluation.questionId,
+      questionText: evaluation.questionText,
+      answerText: evaluation.answerText,
+      answerLength: evaluation.answerLength,
+      submittedAt: evaluation.submittedAt,
+      ...(evaluation.fluencyScore !== undefined && { fluencyScore: evaluation.fluencyScore }),
+      ...(evaluation.grammarScore !== undefined && { grammarScore: evaluation.grammarScore }),
+      ...(evaluation.vocabularyScore !== undefined && { vocabularyScore: evaluation.vocabularyScore }),
+      ...(evaluation.pronunciationScore !== undefined && { pronunciationScore: evaluation.pronunciationScore }),
+      ...(evaluation.coherenceScore !== undefined && { coherenceScore: evaluation.coherenceScore }),
+      ...(evaluation.overallQuestionScore !== undefined && { overallQuestionScore: evaluation.overallQuestionScore }),
+      ...(evaluation.aiFeedback !== undefined && { aiFeedback: evaluation.aiFeedback }),
+      ...(evaluation.detectedIssues !== undefined && { detectedIssues: evaluation.detectedIssues }),
+      ...(evaluation.suggestedImprovements !== undefined && { suggestedImprovements: evaluation.suggestedImprovements }),
+      ...(evaluation.timeSpentSeconds !== undefined && { timeSpentSeconds: evaluation.timeSpentSeconds }),
+      ...(evaluation.attemptNumber !== undefined && { attemptNumber: evaluation.attemptNumber }),
+    };
+
+    // Get next question if not completed
+    let nextQuestion: { questionId: string; questionText: string; category: string; difficulty: string } | undefined;
+
+    if (!updatedSession.isCompleted()) {
+      const questions = await this.questionRepository.findByTopicId(session.topicId);
+      const nextQuestionEntity = questions[updatedSession.currentQuestionIndex];
+
+      if (nextQuestionEntity) {
+        nextQuestion = {
+          questionId: nextQuestionEntity.id,
+          questionText: nextQuestionEntity.question,
+          category: nextQuestionEntity.category,
+          difficulty: nextQuestionEntity.difficulty,
+        };
+      }
+    }
+
+    this.logger.log(
+      `Audio answer submitted successfully. Session completed: ${updatedSession.isCompleted()}`,
+    );
+
+    return {
+      success: true,
+      evaluation: evaluationDto,
+      currentQuestionIndex: updatedSession.currentQuestionIndex,
+      questionsAnswered: updatedSession.questionsAnswered,
+      totalQuestions: updatedSession.totalQuestions,
+      isCompleted: updatedSession.isCompleted(),
+      ...(nextQuestion !== undefined && { nextQuestion }),
+    };
+  }
+
+  /**
    * Get final session score and feedback
    */
   async getSessionScore(userId: string, sessionId: string): Promise<GetSessionScoreResponseDto> {

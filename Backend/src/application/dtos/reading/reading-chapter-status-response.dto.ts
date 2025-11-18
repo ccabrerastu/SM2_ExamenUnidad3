@@ -59,6 +59,7 @@ export class ReadingChaptersStatusResponseDto {
     totalChapters: number;
     unlockedChapters: number;
     completedChapters: number;
+    overallProgress: number;
   };
 
   @ApiProperty({

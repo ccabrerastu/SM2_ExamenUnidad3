@@ -7,33 +7,39 @@
 **Fecha:** 18/11/2025  
 
 ---
-# 📌 1. URL del Repositorio  
+## 📌 1. URL del Repositorio  
 **Repositorio público:**  
 👉 https://github.com/ccabrerastu/SM2_ExamenUnidad3
 
 ---
-# 📌 2. Descripción del Proyecto: TeachSpeak  
+## 📌 2. Descripción del Proyecto: TeachSpeak  
 TeachSpeak es una aplicación móvil desarrollada en Flutter cuyo objetivo es ayudar a estudiantes de Ingeniería de Sistemas a mejorar su dominio del inglés técnico mediante módulos interactivos, lecciones, glosarios y evaluaciones básicas.
 
 ---
 
-# 📌 3. Estructura del Proyecto  
+## 📌 3. Estructura del Proyecto  
+
 El repositorio contiene la siguiente estructura relevante para el flujo de trabajo:
 
+```
 SM2_ExamenUnidad3/
 ├── .github/
-│ └── workflows/
-│ └── quality-check.yml
+│   └── workflows/
+│       └── quality-check.yml
 ├── Backend/
 ├── Frontend/
 ├── test/
-│ └── main_test.dart
-
-
+│   └── main_test.dart
+├── README.md
+├── image.png
+├── image-1.png
+├── image-2.png
+└── image-4.png
+```
 
 ---
 
-# 📌 4. Evidencias 
+## 📌 4. Evidencias 
 
 
 ### 🖼️ 1. Carpeta .github/workflows/
@@ -55,13 +61,23 @@ SM2_ExamenUnidad3/
 **Descripción:** Evidencia de las 3 pruebas unitarias requeridas.
 
 ---
+### 🖼️ 4. Contenido del archivo main_test.dart
 
-### 🖼️ 4. Ejecución del workflow en GitHub Actions
+![alt text](image-4.png)
+**Descripción:** Dentro del archivo se ejecutan varias pruebas. 
+
+---
+
+### 🖼️ 5. Ejecución del workflow en GitHub Actions
 
 ![alt text](image-2.png)
-**Descripción:** Demuestra que el pipeline aun no se ejecutó de forma automática por algunos errores del codigo. 
+**Descripción:** Demuestras que el pipeline aun no se ejecutó de forma automática por algunos errores del codigo. 
 
 ---
 
 
+### 🖼️ 6. Ejecución de los tests del backend
 
+
+![](image-6.png)
+**Descripción:** Se corrieron exitosamente las pruebas del backend con algunos warning pero todo bien.
