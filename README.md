@@ -77,7 +77,7 @@ SM2_ExamenUnidad3/
 
 ### 🖼️ 6. Ejecución de los tests del frontend
 
-
+![alt text](image-8.png)
 
 **Descripción:**  Se corrieron exitosamente las pruebas del frontend. Son 40 tests que se agregaron en la implementación del código, y hoy implementé 3 adicionales para el examen. 
 
